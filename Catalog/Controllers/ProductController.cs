@@ -13,80 +13,67 @@ namespace Catalog.Controllers
     [ApiController]
     public class ProductController : ControllerBase
     {
-        private readonly IProductRepository _productRepository;
-        private readonly IMessageRepository _messageRepository;
+        private readonly IProductService _productService;
 
-        public ProductController(IProductRepository productRepository, IMessageRepository messageRepository)
+        public ProductController(IProductService productService)
         {
-            _productRepository = productRepository;
-            _messageRepository = messageRepository;
+            _productService = productService;
         }
 
         [HttpGet("{productGuid}")]
         public async Task<ActionResult<ProductViewModel>> GetProduct(Guid productGuid)
         {
-            var product = await _productRepository.GetProduct(productGuid);
-            if (product != null)
-            {
-                return StatusCode(StatusCodes.Status200OK, product);
-            }
-            else
-            {
-                return StatusCode(StatusCodes.Status404NotFound, "No Product Found with this Id");
-            }
+            var result = await _productService.GetProduct(productGuid);
+            return Ok(result ?? new ProductViewModel());
+
         }
         [HttpGet("All")]
         public async Task<ActionResult<ProductViewModel>> GetAllProducts()
         {
-            var products = await _productRepository.GetProducts();
-            if (products != null)
-            {
-                return StatusCode(StatusCodes.Status200OK, products);
-            }
-            else
-            {
-                return StatusCode(StatusCodes.Status404NotFound, "No Products Found");
-            }
+            var result = await _productService.GetProducts();
+            return Ok(result ?? new List<ProductViewModel>());
         }
         [HttpPost]
         public async Task<ActionResult<Guid>> CreateProduct([FromBody] ProductViewModel product)
         {
-            var result = _productRepository.CreatProduct(product);
-            if (_productRepository.Save())
+            try
             {
-                await _messageRepository.SendMessage(product.Name, product.Price);
-                return StatusCode(StatusCodes.Status201Created, result);
+                _productService.CreatProduct(product);
+                return Ok(StatusCodes.Status201Created);
             }
-            else
+            catch (Exception)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Failed To Create Product");
+                return Ok(StatusCodes.Status500InternalServerError);
+
             }
+
         }
 
         [HttpDelete("{productGuid}")]
         public async Task<ActionResult<Guid>> DeleteProduct([FromQuery] Guid productGuid)
         {
-            _productRepository.Deleteproduct(productGuid);
-            if (_productRepository.Save())
+            try
             {
+                _productService.Deleteproduct(productGuid);
                 return StatusCode(StatusCodes.Status200OK, "Product Deleted");
             }
-            else
+            catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "Failed To Delete Product");
             }
         }
 
         [HttpPut("{productGuid}")]
-        public async Task<ActionResult<Guid>> DeleteProduct([FromBody] ProductViewModel product, Guid productGuid)
+        public async Task<ActionResult<Guid>> UpdateProduct([FromBody] ProductViewModel product, Guid productGuid)
         {
-            _productRepository.Update(product, productGuid);
 
-            if (_productRepository.Save())
+            try
             {
+                _productService.Update(product, productGuid);
+
                 return StatusCode(StatusCodes.Status200OK, "Product Updated");
             }
-            else
+            catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "Failed To Update Product");
             }

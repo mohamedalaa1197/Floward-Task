@@ -21,6 +21,7 @@ namespace Catalog.ExtensionServices
                 options.UseSqlServer(config.GetConnectionString("DefaultConnection"));
             });
             services.AddCors();
+            services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IProductRepository, ProductRepository>();
             services.AddScoped<IMessageRepository, MessageRepository>();
             services.AddAutoMapper(typeof(AutoMapperProfile));
